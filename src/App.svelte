@@ -299,7 +299,7 @@
     </tbody>
   </table>
   <button on:click={addPlayer} class="big">Add player</button>
-  <button on:click={resetGame} class="big">Reset game</button>
+  <button on:click={e => {if (confirm("Reset game?")) resetGame()}} class="big">Reset game</button>
   <h2>Probabilities</h2>
   <table>
     <thead>
