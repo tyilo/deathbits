@@ -159,28 +159,43 @@
     roundsPlayed++;
   }
 
+  const dice_sum_outcomes_cache = [[1]];
+  function dice_sum_outcomes(dice, sum) {
+    // Calculate and cache all rows up to dice
+    for (let k = dice_sum_outcomes_cache.length; k <= dice; k++) {
+      dice_sum_outcomes_cache.push(Array(k).fill(0));
+
+      for (let sum = k; sum <= 6 * k; sum++) {
+        let count = 0;
+        for (let i = 1; i <= 6; i++) {
+          const rem = sum - i;
+          if (k - 1 <= rem && rem <= 6 * (k - 1)) {
+            count += dice_sum_outcomes_cache[k - 1][rem];
+          }
+        }
+        dice_sum_outcomes_cache[k].push(count);
+      }
+    }
+
+    return dice_sum_outcomes_cache[dice][sum];
+  }
+
   $: dice = Math.ceil(Math.pow(2, players.length - 1) / 6);
 
   $: {
-    if (dice <= 8) {
-      outcomes = Array(players.length).fill(0);
-      (function f(vals) {
-        if (vals.length === dice) {
-          const val = sum(vals);
-          for (let i = 0; i < players.length; i++) {
-            outcomes[i] += getBit(val, i);
-          }
-        } else {
-          for (let i = 1; i <= 6; i++) {
-            f([...vals, i]);
-          }
-        }
-      })([]);
-      averageProbability = sum(outcomes) / (players.length * Math.pow(6, dice));
-    } else {
-      outcomes = Array(players.length).fill(null);
-      averageProbability = null;
+    outcomes = [];
+
+    outcomes = Array(players.length).fill(0);
+
+    for (let sum = dice; sum <= 6 * dice; sum++) {
+      const pos = dice_sum_outcomes(dice, sum);
+      console.log(sum, pos);
+      for (let i = 0; i < players.length; i++) {
+        outcomes[i] += pos * getBit(sum, i);
+      }
     }
+
+    averageProbability = sum(outcomes) / (players.length * Math.pow(6, dice));
   }
 
   resetGame();
@@ -299,7 +314,13 @@
     </tbody>
   </table>
   <button on:click={addPlayer} class="big">Add player</button>
-  <button on:click={e => {if (confirm("Reset game?")) resetGame()}} class="big">Reset game</button>
+  <button
+    on:click={e => {
+      if (confirm('Reset game?')) resetGame();
+    }}
+    class="big">
+    Reset game
+  </button>
   <h2>Probabilities</h2>
   <table>
     <thead>
