@@ -1,9 +1,8 @@
 use std::fmt::Display;
 
-use deathbits::{DiceSumOutcomes, dice_needed, ilog, total_outcomes};
+use deathbits::{DiceSumOutcomes, FromRatio, Num, dice_needed, ilog, total_outcomes};
 use itertools::Itertools;
 use num_bigint::BigUint;
-use num_traits::ToPrimitive;
 
 struct DisplayApprox<'a>(&'a BigUint);
 
@@ -19,19 +18,27 @@ impl Display for DisplayApprox<'_> {
     }
 }
 
-fn main() {
-    let mut cache = DiceSumOutcomes::new();
-    for n in 1..20 {
+fn run<T: Num>() {
+    let mut cache = DiceSumOutcomes::<T>::new();
+    for n in 1.. {
         let dice = dice_needed(n);
         let outcomes = total_outcomes(dice);
         println!(
-            "n={n:<2} k={dice:<4} outcomes={:<8} {}",
+            "n={n:<2} k={dice:<5} outcomes={:<9} {}",
             DisplayApprox(&outcomes),
             cache
                 .deathbit_stats(n)
                 .into_iter()
-                .map(|v| format!("{:.02}", v.to_f64().unwrap()))
+                .map(|v| format!("{:.02}", v.as_f64()))
                 .join(", ")
         );
     }
+}
+
+fn main() {
+    //run::<f64>();
+    //run::<BigUint>();
+    //run::<arpfloat::Float>();
+    //run::<fast_posit::p64>();
+    run::<fast_posit::Posit<64, 20, i64>>();
 }

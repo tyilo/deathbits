@@ -3,6 +3,12 @@
 version = 4
 
 [[package]]
+name = "arpfloat"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28898ff046edde8a5191546e2be631d5d45df9ca0867b2471c554502d5be65b4"
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12,6 +18,8 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 name = "deathbits"
 version = "0.1.0"
 dependencies = [
+ "arpfloat",
+ "fast-posit",
  "itertools",
  "num-bigint",
  "num-rational",
@@ -24,6 +32,12 @@ name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
+
+[[package]]
+name = "fast-posit"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6751c48712c8ea30afa8b4ae3cec082881dca986c2d0cb3585d57094c568f101"
 
 [[package]]
 name = "higher-kinded-types"

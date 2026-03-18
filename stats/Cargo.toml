@@ -4,8 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+arpfloat = { version = "0.1.11", default-features = false, features = ["std"] }
+fast-posit = "0.1.5"
 itertools = "0.14.0"
 num-bigint = "0.4.6"
 num-rational = "0.4.2"
 num-traits = "0.2.19"
 polonius-the-crab = "0.5.0"
+
+[lints.clippy]
+pedantic = "deny"
