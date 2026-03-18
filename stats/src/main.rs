@@ -18,20 +18,32 @@ impl Display for DisplayApprox<'_> {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_sign_loss)]
 fn run<T: Num>() {
     let mut cache = DiceSumOutcomes::<T>::new();
     for n in 1.. {
         let dice = dice_needed(n);
         let outcomes = total_outcomes(dice);
+        let stats: Vec<_> = cache
+            .deathbit_stats(n)
+            .into_iter()
+            .map(|v| v.as_f64())
+            .collect();
+        let end_pattern: Vec<_> = stats
+            .iter()
+            .copied()
+            .rev()
+            .take_while(|v| !(0.01..=0.99).contains(v))
+            .map(|v| v.round() as u8)
+            .collect();
+
         println!(
             "n={n:<2} k={dice:<5} outcomes={:<9} {}",
             DisplayApprox(&outcomes),
-            cache
-                .deathbit_stats(n)
-                .into_iter()
-                .map(|v| format!("{:.02}", v.as_f64()))
-                .join(", ")
+            stats.into_iter().map(|v| format!("{v:.02}")).join(", ")
         );
+        println!("  Pattern: {end_pattern:?}");
     }
 }
 
