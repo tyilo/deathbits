@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 arpfloat = { version = "0.1.11", default-features = false, features = ["std"] }
+custom_float = { git = "https://github.com/tyilo/custom_float.git", branch = "fix-compile", version = "0.3.1" }
 fast-posit = "0.1.5"
 itertools = "0.14.0"
 num-bigint = "0.4.6"

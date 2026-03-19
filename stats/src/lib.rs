@@ -1,8 +1,12 @@
 #![feature(gen_blocks)]
+// For custom_float:
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 
 use std::ops::AddAssign;
 
 use arpfloat::{Float, RoundingMode, Semantics};
+use custom_float::{Fp, UInt, bitsize_of};
 use fast_posit::{Posit, RoundInto};
 use num_bigint::BigUint;
 use num_rational::Ratio;
@@ -163,6 +167,54 @@ impl<const N: u32, const ES: u32, Int: fast_posit::Int> Num for Posit<N, ES, Int
             base *= base;
         }
         res
+    }
+}
+
+impl<
+    U: UInt,
+    const SIGN_BIT: bool,
+    const EXP_SIZE: usize,
+    const INT_SIZE: usize,
+    const FRAC_SIZE: usize,
+    const EXP_BASE: usize,
+> FromRatio<Fp<U, SIGN_BIT, EXP_SIZE, INT_SIZE, FRAC_SIZE, EXP_BASE>>
+    for Fp<U, SIGN_BIT, EXP_SIZE, INT_SIZE, FRAC_SIZE, EXP_BASE>
+where
+    [(); bitsize_of::<U>() - SIGN_BIT as usize - EXP_SIZE - INT_SIZE - FRAC_SIZE]:,
+    [(); EXP_BASE - 2]:,
+{
+    fn from_ratio(
+        n: Fp<U, SIGN_BIT, EXP_SIZE, INT_SIZE, FRAC_SIZE, EXP_BASE>,
+        d: Fp<U, SIGN_BIT, EXP_SIZE, INT_SIZE, FRAC_SIZE, EXP_BASE>,
+    ) -> Self {
+        n / d
+    }
+
+    fn as_f64(&self) -> f64 {
+        (*self).into()
+    }
+}
+
+impl<
+    U: UInt,
+    const SIGN_BIT: bool,
+    const EXP_SIZE: usize,
+    const INT_SIZE: usize,
+    const FRAC_SIZE: usize,
+    const EXP_BASE: usize,
+> Num for Fp<U, SIGN_BIT, EXP_SIZE, INT_SIZE, FRAC_SIZE, EXP_BASE>
+where
+    [(); bitsize_of::<U>() - SIGN_BIT as usize - EXP_SIZE - INT_SIZE - FRAC_SIZE]:,
+    [(); EXP_BASE - 2]:,
+{
+    type Ratio = Self;
+
+    fn from_u64(v: u64) -> Self {
+        v.into()
+    }
+
+    fn pow(&self, v: u32) -> Self {
+        self.powi(i64::from(v))
     }
 }
 

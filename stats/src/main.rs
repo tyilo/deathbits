@@ -1,3 +1,5 @@
+#![recursion_limit = "1000"]
+
 use std::fmt::Display;
 
 use deathbits::{DiceSumOutcomes, FromRatio, Num, dice_needed, ilog, total_outcomes};
@@ -52,5 +54,6 @@ fn main() {
     //run::<BigUint>();
     //run::<arpfloat::Float>();
     //run::<fast_posit::p64>();
-    run::<fast_posit::Posit<64, 20, i64>>();
+    //run::<fast_posit::Posit<64, 20, i64>>();
+    run::<custom_float::ieee754::FpHalf>();
 }
