@@ -2,12 +2,13 @@
 
 use std::ops::AddAssign;
 
-use arpfloat::{Float, RoundingMode, Semantics};
+use arpfloat::{Float as ArpFloat, RoundingMode, Semantics};
 use fast_posit::{Posit, RoundInto};
 use num_bigint::BigUint;
 use num_rational::Ratio;
 use num_traits::ToPrimitive;
 use polonius_the_crab::{polonius, polonius_return};
+use std_traits::num::{Float, Number, Unsigned};
 
 const EYES: usize = 6;
 
@@ -98,8 +99,8 @@ impl Num for BigUint {
 
 const SEMANTICS: Semantics = Semantics::new(20, 20, RoundingMode::NearestTiesToEven);
 
-impl FromRatio<Float> for Float {
-    fn from_ratio(n: Float, d: Float) -> Self {
+impl FromRatio<ArpFloat> for ArpFloat {
+    fn from_ratio(n: ArpFloat, d: ArpFloat) -> Self {
         n / d
     }
 
@@ -108,7 +109,7 @@ impl FromRatio<Float> for Float {
     }
 }
 
-impl Num for Float {
+impl Num for ArpFloat {
     type Ratio = Self;
 
     fn from_u64(v: u64) -> Self {
@@ -163,6 +164,39 @@ impl<const N: u32, const ES: u32, Int: fast_posit::Int> Num for Posit<N, ES, Int
             base *= base;
         }
         res
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct LogNum<T: Float>(T);
+
+impl<T: Float> AddAssign<&Self> for LogNum<T> {
+    fn add_assign(&mut self, rhs: &Self) {
+        // See https://stackoverflow.com/a/65233446/640584
+        self.0 = self.0.max(rhs.0) + (-(self.0 - rhs.0).abs()).exp().ln_1p();
+    }
+}
+
+impl<T: Float> FromRatio<LogNum<T>> for LogNum<T> {
+    fn from_ratio(n: LogNum<T>, d: LogNum<T>) -> Self {
+        LogNum(n.0 - d.0)
+    }
+
+    fn as_f64(&self) -> f64 {
+        self.0.cast_float::<f64>().exp()
+    }
+}
+
+impl<T: Float> Num for LogNum<T> {
+    type Ratio = Self;
+
+    fn from_u64(v: u64) -> Self {
+        let v = v.cast_float::<T>().ln();
+        LogNum(v)
+    }
+
+    fn pow(&self, v: u32) -> Self {
+        LogNum(self.0 * v.cast_float::<T>())
     }
 }
 

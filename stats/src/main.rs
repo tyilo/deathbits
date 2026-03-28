@@ -52,5 +52,6 @@ fn main() {
     //run::<BigUint>();
     //run::<arpfloat::Float>();
     //run::<fast_posit::p64>();
-    run::<fast_posit::Posit<64, 20, i64>>();
+    //run::<fast_posit::Posit<64, 20, i64>>();
+    run::<deathbits::LogNum<f64>>();
 }

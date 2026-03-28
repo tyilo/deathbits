@@ -25,6 +25,7 @@ dependencies = [
  "num-rational",
  "num-traits",
  "polonius-the-crab",
+ "std-traits",
 ]
 
 [[package]]
@@ -135,3 +136,9 @@ dependencies = [
  "higher-kinded-types",
  "never-say-never",
 ]
+
+[[package]]
+name = "std-traits"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3520c37567c256489250434374b0c9764876cc6e031fca8516acd79bf0e7fb83"
