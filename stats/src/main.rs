@@ -45,6 +45,8 @@ fn run<T: Num>() {
             .map(|v| v.round() as u8)
             .collect();
 
+        let is_precise = (stats[0] - 0.5).abs() < 0.01;
+
         writeln!(
             writer,
             "n={n:<2} k={dice:<5} outcomes={:<9} {}",
@@ -52,6 +54,12 @@ fn run<T: Num>() {
             stats.into_iter().map(|v| format!("{v:.02}")).join(", ")
         )
         .unwrap();
+
+        if !is_precise {
+            writeln!(writer, "  Precision not good enough, stopping.").unwrap();
+            return;
+        }
+
         writeln!(writer, "  Pattern: {end_pattern:?}").unwrap();
         writer.flush().unwrap();
     }
