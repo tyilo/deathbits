@@ -21,5 +21,9 @@ fn main() {
 )]
 fn bench<T: Num>(n: u32) -> Vec<f64> {
     let mut cache = DiceSumOutcomes::<T>::new();
-    cache.deathbit_stats(n).into_iter().map(|v| v.as_f64()).collect()
+    cache
+        .deathbit_stats(n)
+        .into_iter()
+        .map(|v| v.as_f64())
+        .collect()
 }

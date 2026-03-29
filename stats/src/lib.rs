@@ -8,7 +8,7 @@ use num_bigint::BigUint;
 use num_rational::Ratio;
 use num_traits::ToPrimitive;
 use polonius_the_crab::{polonius, polonius_return};
-use std_traits::num::{Float, Number, Unsigned};
+use std_traits::num::{Float, Number};
 
 const EYES: usize = 6;
 
@@ -150,7 +150,11 @@ impl<const N: u32, const ES: u32, Int: fast_posit::Int> Num for Posit<N, ES, Int
     ///
     /// let two = p64::round_from(2i64);
     /// for i in 0..10 {
-    ///     assert_eq!(two.pow(i), p64::round_from(2i64.pow(i)), "2^{i}: {}", f64::round_from(two.pow(i)));
+    ///     assert_eq!(
+    ///         two.pow(i),
+    ///         p64::round_from(2i64.pow(i)),
+    ///         "2^{i}: {}", f64::round_from(two.pow(i))
+    ///     );
     /// }
     /// ```
     fn pow(&self, mut v: u32) -> Self {

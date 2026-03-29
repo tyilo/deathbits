@@ -1,5 +1,4 @@
-use std::io::Write;
-use std::{any::type_name, fmt::Display, fs::File, io};
+use std::{any::type_name, fmt::Display, fs::File, io, io::Write};
 
 use clap::{Parser, ValueEnum};
 use deathbits::{DiceSumOutcomes, FromRatio, Num, dice_needed, ilog, total_outcomes};
