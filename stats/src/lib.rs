@@ -1,6 +1,6 @@
 #![feature(gen_blocks)]
 
-use std::ops::AddAssign;
+use std::{cmp::Ordering, ops::AddAssign};
 
 use arpfloat::{Float as ArpFloat, RoundingMode, Semantics};
 use fast_posit::{Posit, RoundInto};
@@ -245,7 +245,7 @@ impl<T: DoubleEndedIterator> ZigZag for T {
 
 pub struct DiceSumOutcomes<T> {
     zero: T,
-    cache: Vec<Vec<T>>,
+    cache: (usize, Vec<T>),
 }
 
 impl<T: Num> Default for DiceSumOutcomes<T> {
@@ -253,7 +253,7 @@ impl<T: Num> Default for DiceSumOutcomes<T> {
         let zero_row = vec![T::one()];
         Self {
             zero: T::zero(),
-            cache: vec![zero_row],
+            cache: (0, zero_row),
         }
     }
 }
@@ -266,31 +266,30 @@ impl<T: Num> DiceSumOutcomes<T> {
 
     #[must_use]
     fn get_row(&mut self, dice: usize) -> &[T] {
-        let mut this = self;
-        polonius!(|this| -> &'polonius [T] {
-            if let Some(row) = this.cache.get(dice) {
-                polonius_return!(row);
-            }
-        });
-
-        let prev_row = this.get_row(dice - 1);
-        let offset = dice - 1;
-        let mut row = vec![];
-        for sum in dice..=EYES * dice {
-            let mut count = T::zero();
-            for i in 1..=EYES {
-                let Some(j) = sum.checked_sub(i).and_then(|v| v.checked_sub(offset)) else {
-                    continue;
-                };
-                if let Some(v) = prev_row.get(j) {
-                    count += v;
+        match dice.cmp(&self.cache.0) {
+            Ordering::Less => unimplemented!(),
+            Ordering::Equal => &self.cache.1,
+            Ordering::Greater => {
+                let prev_row = self.get_row(dice - 1);
+                let offset = dice - 1;
+                let mut row = vec![];
+                for sum in dice..=EYES * dice {
+                    let mut count = T::zero();
+                    for i in 1..=EYES {
+                        let Some(j) = sum.checked_sub(i).and_then(|v| v.checked_sub(offset)) else {
+                            continue;
+                        };
+                        if let Some(v) = prev_row.get(j) {
+                            count += v;
+                        }
+                    }
+                    row.push(count);
                 }
-            }
-            row.push(count);
-        }
 
-        this.cache.push(row);
-        this.cache.last().unwrap()
+                self.cache = (dice, row);
+                &self.cache.1
+            }
+        }
     }
 
     #[must_use]
