@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::{any::type_name, fmt::Display, fs::File, io};
 
+use clap::{Parser, ValueEnum};
 use deathbits::{DiceSumOutcomes, FromRatio, Num, dice_needed, ilog, total_outcomes};
 use itertools::Itertools;
 use num_bigint::BigUint;
@@ -56,11 +57,32 @@ fn run<T: Num>() {
     }
 }
 
+#[derive(Parser)]
+struct Cli {
+    num_type: NumType,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum NumType {
+    F64,
+    BigUint,
+    ArpFloat,
+    FastPositP64,
+    FastPosit64_20,
+    LogNumF32,
+    LogNumF64,
+}
+
 fn main() {
-    //run::<f64>();
-    //run::<BigUint>();
-    //run::<arpfloat::Float>();
-    //run::<fast_posit::p64>();
-    //run::<fast_posit::Posit<64, 20, i64>>();
-    run::<deathbits::LogNum<f64>>();
+    let args = Cli::parse();
+
+    match args.num_type {
+        NumType::F64 => run::<f64>(),
+        NumType::BigUint => run::<BigUint>(),
+        NumType::ArpFloat => run::<arpfloat::Float>(),
+        NumType::FastPositP64 => run::<fast_posit::p64>(),
+        NumType::FastPosit64_20 => run::<fast_posit::Posit<64, 20, i64>>(),
+        NumType::LogNumF32 => run::<deathbits::LogNum<f32>>(),
+        NumType::LogNumF64 => run::<deathbits::LogNum<f64>>(),
+    }
 }
