@@ -1,5 +1,7 @@
 #![feature(gen_blocks)]
 
+pub mod uint_float;
+
 use std::{cmp::Ordering, ops::AddAssign};
 
 use arpfloat::{Float as ArpFloat, RoundingMode, Semantics};
@@ -9,6 +11,8 @@ use num_rational::Ratio;
 use num_traits::ToPrimitive;
 use polonius_the_crab::{polonius, polonius_return};
 use std_traits::num::{Float, Number, Unsigned};
+
+use crate::uint_float::UIntFloat;
 
 const EYES: usize = 6;
 
@@ -197,6 +201,35 @@ impl<T: Float> Num for LogNum<T> {
 
     fn pow(&self, v: u32) -> Self {
         LogNum(self.0 * v.cast_float::<T>())
+    }
+}
+
+impl<T: Unsigned, const EXP_SIZE: u32, const INT_SIZE: u32>
+    FromRatio<UIntFloat<T, EXP_SIZE, INT_SIZE>> for f64
+{
+    fn from_ratio(
+        n: UIntFloat<T, EXP_SIZE, INT_SIZE>,
+        d: UIntFloat<T, EXP_SIZE, INT_SIZE>,
+    ) -> Self {
+        n.to_f64_approx() / d.to_f64_approx()
+    }
+
+    fn as_f64(&self) -> f64 {
+        *self
+    }
+}
+
+impl<T: Unsigned, const EXP_SIZE: u32, const INT_SIZE: u32> Num
+    for UIntFloat<T, EXP_SIZE, INT_SIZE>
+{
+    type Ratio = f64;
+
+    fn from_u64(v: u64) -> Self {
+        todo!()
+    }
+
+    fn pow(&self, v: u32) -> Self {
+        todo!()
     }
 }
 
