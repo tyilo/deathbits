@@ -1,7 +1,14 @@
-use std::{any::type_name, fmt::Display, fs::File, io, io::Write};
+use std::{
+    any::type_name,
+    fmt::Display,
+    fs::File,
+    io::{self, Write},
+    time::{Duration, Instant},
+};
 
 use clap::{Parser, ValueEnum};
 use deathbits::{DiceSumOutcomes, FromRatio, Num, dice_needed, ilog, total_outcomes};
+use humantime::format_duration;
 use itertools::Itertools;
 use num_bigint::BigUint;
 use tee_readwrite::TeeWriter;
@@ -20,6 +27,19 @@ impl Display for DisplayApprox<'_> {
     }
 }
 
+struct DisplayDuration(Duration);
+
+impl Display for DisplayDuration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let duration = Duration::new(self.0.as_secs(), self.0.subsec_millis() * 1_000_000);
+        if duration.is_zero() {
+            write!(f, "0ms")
+        } else {
+            write!(f, "{}", format_duration(duration))
+        }
+    }
+}
+
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_sign_loss)]
 fn run<T: Num>() {
@@ -28,6 +48,9 @@ fn run<T: Num>() {
     let mut writer = TeeWriter::new(stdout, log_file);
 
     let mut cache = DiceSumOutcomes::<T>::new();
+
+    let start = Instant::now();
+
     for n in 1.. {
         let dice = dice_needed(n);
         let outcomes = total_outcomes(dice);
@@ -46,9 +69,14 @@ fn run<T: Num>() {
 
         let is_precise = (stats[0] - 0.5).abs() < 0.01;
 
+        if n != 1 {
+            writeln!(writer).unwrap();
+        }
+
+        writeln!(writer, "{} after start:", DisplayDuration(start.elapsed())).unwrap();
         writeln!(
             writer,
-            "n={n:<2} k={dice:<5} outcomes={:<9} {}",
+            "  n={n:<2} k={dice:<5} outcomes={:<9} {}",
             DisplayApprox(&outcomes),
             stats.into_iter().map(|v| format!("{v:.02}")).join(", ")
         )
