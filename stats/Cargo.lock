@@ -26,6 +26,7 @@ dependencies = [
  "num-traits",
  "polonius-the-crab",
  "std-traits",
+ "tee_readwrite",
 ]
 
 [[package]]
@@ -142,3 +143,9 @@ name = "std-traits"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3520c37567c256489250434374b0c9764876cc6e031fca8516acd79bf0e7fb83"
+
+[[package]]
+name = "tee_readwrite"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57d3e5629bb07f004134a87a2d3cb6272f0a455942401f35776e3f17ecc8d955"

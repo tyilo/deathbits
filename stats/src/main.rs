@@ -1,8 +1,10 @@
-use std::fmt::Display;
+use std::io::Write;
+use std::{any::type_name, fmt::Display, fs::File, io};
 
 use deathbits::{DiceSumOutcomes, FromRatio, Num, dice_needed, ilog, total_outcomes};
 use itertools::Itertools;
 use num_bigint::BigUint;
+use tee_readwrite::TeeWriter;
 
 struct DisplayApprox<'a>(&'a BigUint);
 
@@ -21,6 +23,10 @@ impl Display for DisplayApprox<'_> {
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_sign_loss)]
 fn run<T: Num>() {
+    let stdout = io::stdout().lock();
+    let log_file = File::create(format!("output/{}.txt", type_name::<T>())).unwrap();
+    let mut writer = TeeWriter::new(stdout, log_file);
+
     let mut cache = DiceSumOutcomes::<T>::new();
     for n in 1.. {
         let dice = dice_needed(n);
@@ -38,12 +44,15 @@ fn run<T: Num>() {
             .map(|v| v.round() as u8)
             .collect();
 
-        println!(
+        writeln!(
+            writer,
             "n={n:<2} k={dice:<5} outcomes={:<9} {}",
             DisplayApprox(&outcomes),
             stats.into_iter().map(|v| format!("{v:.02}")).join(", ")
-        );
-        println!("  Pattern: {end_pattern:?}");
+        )
+        .unwrap();
+        writeln!(writer, "  Pattern: {end_pattern:?}").unwrap();
+        writer.flush().unwrap();
     }
 }
 
