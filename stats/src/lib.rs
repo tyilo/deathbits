@@ -226,21 +226,48 @@ pub fn ilog(a: &BigUint, b: &BigUint) -> BigUint {
     res
 }
 
-trait ZigZag: DoubleEndedIterator {
-    fn zig_zag(self) -> impl Iterator<Item = Self::Item>;
+#[derive(Debug)]
+struct TableRow<T> {
+    dice: usize,
+    data: Vec<T>,
 }
 
-impl<T: DoubleEndedIterator> ZigZag for T {
-    fn zig_zag(mut self) -> impl Iterator<Item = Self::Item> {
+impl<T: Num> TableRow<T> {
+    fn zero() -> Self {
+        Self {
+            dice: 0,
+            data: vec![T::one()],
+        }
+    }
+
+    fn has_two_medians(&self) -> bool {
+        self.dice % 2 == 1
+    }
+
+    fn get(&self, i: usize) -> Option<&T> {
+        self.data.get(i).or_else(|| {
+            let len = self.data.len();
+
+            let mut j = (2 * len).checked_sub(i + 1)?;
+            if !self.has_two_medians() {
+                j = j.checked_sub(1)?;
+            }
+
+            self.data.get(j)
+        })
+    }
+
+    fn iter(&self) -> impl Iterator<Item = (usize, &T)> {
         gen move {
-            loop {
-                match self.next() {
-                    None => break,
-                    Some(v) => yield v,
-                }
-                match self.next_back() {
-                    None => break,
-                    Some(v) => yield v,
+            let has_two_medians = self.has_two_medians();
+            let len = self.data.len();
+            for (i, v) in self.data.iter().enumerate() {
+                yield (self.dice + i, v);
+                if has_two_medians || i != len - 1 {
+                    yield (
+                        self.dice + 2 * len - i - 1 - usize::from(!has_two_medians),
+                        v,
+                    );
                 }
             }
         }
@@ -249,15 +276,14 @@ impl<T: DoubleEndedIterator> ZigZag for T {
 
 pub struct DiceSumOutcomes<T> {
     zero: T,
-    cache: (usize, Vec<T>),
+    cache: TableRow<T>,
 }
 
 impl<T: Num> Default for DiceSumOutcomes<T> {
     fn default() -> Self {
-        let zero_row = vec![T::one()];
         Self {
             zero: T::zero(),
-            cache: (0, zero_row),
+            cache: TableRow::zero(),
         }
     }
 }
@@ -269,15 +295,16 @@ impl<T: Num> DiceSumOutcomes<T> {
     }
 
     #[must_use]
-    fn get_row(&mut self, dice: usize) -> &[T] {
-        match dice.cmp(&self.cache.0) {
+    fn get_row(&mut self, dice: usize) -> &TableRow<T> {
+        match dice.cmp(&self.cache.dice) {
             Ordering::Less => unimplemented!(),
-            Ordering::Equal => &self.cache.1,
+            Ordering::Equal => {}
             Ordering::Greater => {
                 let prev_row = self.get_row(dice - 1);
                 let offset = dice - 1;
                 let mut row = vec![];
-                for sum in dice..=EYES * dice {
+                let median = dice * (EYES + 1) / 2;
+                for sum in dice..=median {
                     let mut count = T::zero();
                     for i in 1..=EYES {
                         let Some(j) = sum.checked_sub(i).and_then(|v| v.checked_sub(offset)) else {
@@ -290,10 +317,10 @@ impl<T: Num> DiceSumOutcomes<T> {
                     row.push(count);
                 }
 
-                self.cache = (dice, row);
-                &self.cache.1
+                self.cache = TableRow { dice, data: row };
             }
         }
+        &self.cache
     }
 
     #[must_use]
@@ -319,8 +346,8 @@ impl<T: Num> DiceSumOutcomes<T> {
         let dice = 2usize.pow(players - 1).div_ceil(EYES);
         let row = self.get_row(dice);
         let mut counts = vec![T::zero(); players.try_into().unwrap()];
-        for (i, v) in row.iter().enumerate().zig_zag() {
-            let sum = dice + i;
+
+        for (sum, v) in row.iter() {
             for (j, count) in counts.iter_mut().enumerate() {
                 if sum & (1 << j) != 0 {
                     *count += v;
@@ -344,16 +371,56 @@ mod test {
     }
 
     #[test]
+    fn symmetric_view_1() {
+        let view = TableRow::<f64>::zero();
+        assert_eq!(view.get(0), Some(&1.0));
+        assert_eq!(view.get(1), None);
+        assert_eq!(view.get(2), None);
+    }
+
+    #[test]
+    fn symmetric_view_3() {
+        let view = TableRow {
+            dice: 1,
+            data: vec![1.0, 2.0, 3.0],
+        };
+        assert_eq!(view.get(0), Some(&1.0));
+        assert_eq!(view.get(1), Some(&2.0));
+        assert_eq!(view.get(2), Some(&3.0));
+        assert_eq!(view.get(3), Some(&3.0));
+        assert_eq!(view.get(4), Some(&2.0));
+        assert_eq!(view.get(5), Some(&1.0));
+        assert_eq!(view.get(6), None);
+    }
+
+    #[test]
+    fn symmetric_view_6() {
+        let view = TableRow {
+            dice: 2,
+            data: vec![2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+        };
+        assert_eq!(view.get(0), Some(&2.0));
+        assert_eq!(view.get(1), Some(&3.0));
+        assert_eq!(view.get(2), Some(&4.0));
+        assert_eq!(view.get(3), Some(&5.0));
+        assert_eq!(view.get(4), Some(&6.0));
+        assert_eq!(view.get(5), Some(&7.0));
+        assert_eq!(view.get(6), Some(&6.0));
+        assert_eq!(view.get(7), Some(&5.0));
+        assert_eq!(view.get(8), Some(&4.0));
+        assert_eq!(view.get(9), Some(&3.0));
+        assert_eq!(view.get(10), Some(&2.0));
+        assert_eq!(view.get(11), None);
+    }
+
+    #[test]
     fn rows() {
         let mut cache = biguint_cache();
-        assert_eq!(cache.get_row(0), [1u8].map(Into::into));
+        assert_eq!(cache.get_row(0).data, [1u8].map(Into::into));
+        assert_eq!(cache.get_row(1).data, [1u8, 1u8, 1u8].map(Into::into));
         assert_eq!(
-            cache.get_row(1),
-            [1u8, 1u8, 1u8, 1u8, 1u8, 1u8].map(Into::into)
-        );
-        assert_eq!(
-            cache.get_row(2),
-            [1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 5u8, 4u8, 3u8, 2u8, 1u8].map(Into::into)
+            cache.get_row(2).data,
+            [1u8, 2u8, 3u8, 4u8, 5u8, 6u8].map(Into::into)
         );
     }
 
@@ -361,7 +428,7 @@ mod test {
     fn row_sums() {
         let mut cache = biguint_cache();
         for dice in 0..100 {
-            let sum: BigUint = cache.get_row(dice).iter().sum();
+            let sum: BigUint = cache.get_row(dice).iter().map(|(_, v)| v).sum();
             assert_eq!(sum, total_outcomes(dice));
         }
     }
